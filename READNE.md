@@ -1,11 +1,29 @@
-# ⚡ Cyber Breakout (赛博粒子弹球)
+# 无处不在的嘉年华 (Ubiquitous Fiesta)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
 [![JavaScript](https://img.shields.io/badge/Vanilla-JavaScript-F7DF1E?logo=javascript&logoColor=black)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
 [![HTML5](https://img.shields.io/badge/HTML5-Canvas-E34F26?logo=html5&logoColor=white)](https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API)
 
-An interactive, ultra-responsive 2D arcade breakout game engine engineered purely with HTML5 Canvas and vanilla JavaScript. Built with modular collision physics, vector deflection algorithms, dynamic neon shaders, and zero third-party framework overhead.
+Neo-arcade mini games collection. Every game is a self-contained HTML file engineered purely with HTML5 Canvas and vanilla JavaScript, zero third-party framework overhead. Perfect for quick pick-up-and-play sessions.
+
+---
+
+## 🎮 Games
+
+### 🐍 Cyber Snake (赛博贪吃蛇) — `cyber-snake.html`
+
+Classic snake with a cyberpunk twist: neon glow snake, progressive speed-up every 5 apples, and local high-score persistence.
+
+- **Controls**: `W A S D` / arrow keys to steer, `Space` to pause.
+- **Features**: local high score via `localStorage`, neon glow rendering, accelerating difficulty.
+
+### 🧱 Cyber Breakout (赛博打砖块) — `cyber-breakout.html`
+
+An interactive, ultra-responsive 2D arcade breakout game engine. Custom collision detection with bounding box intersection and momentum reflection, neon color-coded brick rows, and mouse-or-keyboard paddle control.
+
+- **Controls**: mouse or `←` / `→` to move the paddle, `Space` to launch the ball.
+- **Features**: angle-dependent paddle deflection, 6-row neon brick grid, 3 lives.
 
 ---
 
@@ -22,11 +40,17 @@ An interactive, ultra-responsive 2D arcade breakout game engine engineered purel
 ## 🧱 Architecture Overview
 
 ```text
-├── index.html       # Clean DOM markup and heads-up display (HUD)
-├── style.css        # Responsive viewport layout & neon theme styling
-├── game.js          # Core gameloop, physics engine, and render pipeline
-└── README.md        # Technical architecture documentation
-git clone [https://github.com/Hulaquan685-CMYK/ubiquitous-fiesta.git](https://github.com/Hulaquan685-CMYK/ubiquitous-fiesta.git)
+├── index.html            # Game lobby / entry page
+├── cyber-snake.html      # Cyber Snake mini game (self-contained)
+├── cyber-breakout.html   # Cyber Breakout mini game (self-contained)
+└── README.md             # Project documentation
+```
+
+## 🚀 Quick Start
+
+```bash
+git clone https://github.com/Hulaquan685-CMYK/ubiquitous-fiesta.git
 cd ubiquitous-fiesta
 # Simply double-click index.html or launch with Python:
 python3 -m http.server 8080
+```

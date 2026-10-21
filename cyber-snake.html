@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cyber Snake · 赛博贪吃蛇</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background:#05060f; color:#00ffcc; font-family:'Courier New', monospace;
+    min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px;
+  }
+  h1 { font-size:24px; letter-spacing:4px; text-shadow:0 0 12px #00ffcc; }
+  #wrap { position:relative; border:2px solid #00ffcc; box-shadow:0 0 20px #00ffcc55, inset 0 0 20px #00ffcc22; }
+  canvas { display:block; background:#060913; }
+  #hud { display:flex; gap:30px; font-size:14px; }
+  #hud span { color:#ff2fa0; }
+  #over { display:none; position:absolute; inset:0; background:#05060fcc; align-items:center; justify-content:center; flex-direction:column; gap:14px; }
+  #over.show { display:flex; }
+  #over h2 { color:#ff2fa0; font-size:28px; text-shadow:0 0 16px #ff2fa0; }
+  button { background:transparent; border:1px solid #00ffcc; color:#00ffcc; padding:8px 26px; font-family:inherit; font-size:14px; letter-spacing:2px; cursor:pointer; }
+  button:hover { background:#00ffcc22; box-shadow:0 0 12px #00ffcc; }
+  .keys { color:#8899bb; font-size:12px; }
+</style>
+</head>
+<body>
+  <h1>CYBER SNAKE</h1>
+  <div id="hud"><span>得分 <b id="score">0</b></span><span>最高 <b id="best">0</b></span></div>
+  <div id="wrap">
+    <canvas id="cv" width="400" height="400"></canvas>
+    <div id="over"><h2>GAME OVER</h2><button onclick="start()">再来一局</button></div>
+  </div>
+  <div class="keys">W A S D / 方向键 控制 · 空格暂停</div>
+<script>
+const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+const N=20,S=cv.width/N;
+let snake,dir,nextDir,food,score,best=+localStorage.getItem('snakeBest')||0,timer,over,paused,speed;
+document.getElementById('best').textContent=best;
+
+function start(){
+  snake=[{x:10,y:10}]; dir={x:1,y:0}; nextDir=dir; score=0; over=false; paused=false; speed=140;
+  placeFood(); document.getElementById('score').textContent=0;
+  document.getElementById('over').classList.remove('show');
+  clearInterval(timer); timer=setInterval(step,speed);
+}
+function placeFood(){
+  do{ food={x:(Math.random()*N)|0, y:(Math.random()*N)|0}; }
+  while(snake.some(s=>s.x===food.x&&s.y===food.y));
+}
+function step(){
+  dir=nextDir;
+  const head={x:snake[0].x+dir.x, y:snake[0].y+dir.y};
+  if(head.x<0||head.y<0||head.x>=N||head.y>=N||snake.some(s=>s.x===head.x&&s.y===head.y)) return gameOver();
+  snake.unshift(head);
+  if(head.x===food.x&&head.y===food.y){
+    score++; document.getElementById('score').textContent=score;
+    if(score>best){best=score;localStorage.setItem('snakeBest',best);document.getElementById('best').textContent=best;}
+    if(score%5===0&&speed>70){speed-=10;clearInterval(timer);timer=setInterval(step,speed);}
+    placeFood();
+  } else snake.pop();
+  draw();
+}
+function draw(){
+  ctx.fillStyle='#060913'; ctx.fillRect(0,0,cv.width,cv.height);
+  ctx.strokeStyle='#0a1428'; ctx.lineWidth=1;
+  for(let i=1;i<N;i++){
+    ctx.beginPath();ctx.moveTo(i*S,0);ctx.lineTo(i*S,cv.height);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(0,i*S);ctx.lineTo(cv.width,i*S);ctx.stroke();
+  }
+  ctx.shadowColor='#ff2fa0'; ctx.shadowBlur=12; ctx.fillStyle='#ff2fa0';
+  ctx.fillRect(food.x*S+4,food.y*S+4,S-8,S-8); ctx.shadowBlur=0;
+  snake.forEach((s,i)=>{
+    const t=i/snake.length;
+    ctx.shadowColor='#00ffcc'; ctx.shadowBlur=10;
+    ctx.fillStyle='rgba(0,255,204,'+(0.45+0.55*t).toFixed(2)+')';
+    ctx.fillRect(s.x*S+2,s.y*S+2,S-4,S-4);
+  });
+  ctx.shadowBlur=0;
+}
+function gameOver(){
+  over=true; clearInterval(timer); document.getElementById('over').classList.add('show');
+}
+document.addEventListener('keydown',e=>{
+  const k=e.key.toLowerCase();
+  if(k===' '){e.preventDefault();if(!over){paused=!paused;if(paused)clearInterval(timer);else timer=setInterval(step,speed);}return;}
+  const d={w:{x:0,y:-1},s:{x:0,y:1},a:{x:-1,y:0},d:{x:1,y:0},arrowup:{x:0,y:-1},arrowdown:{x:0,y:1},arrowleft:{x:-1,y:0},arrowright:{x:1,y:0}}[k];
+  if(d&&!over&&!paused&&(d.x!==-dir.x||d.y!==-dir.y)) nextDir=d;
+});
+start();
+</script>
+</body>
+</html>
