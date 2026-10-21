@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cyber Tic-Tac-Toe · 赛博井字棋</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#05060f;color:#00ffcc;font-family:'Courier New',monospace;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px}
+  h1{font-size:24px;letter-spacing:4px;text-shadow:0 0 12px #00ffcc}
+  #hud{display:flex;gap:24px;font-size:14px}
+  #hud span{color:#ff2fa0}
+  #wrap{position:relative;border:2px solid #00ffcc;box-shadow:0 0 20px #00ffcc55}
+  canvas{display:block;background:#060913;cursor:pointer}
+  #over{display:none;position:absolute;inset:0;background:#05060fcc;align-items:center;justify-content:center;flex-direction:column;gap:14px}
+  #over.show{display:flex}
+  #over h2{color:#ff2fa0;font-size:28px;text-shadow:0 0 16px #ff2fa0}
+  button{background:transparent;border:1px solid #00ffcc;color:#00ffcc;padding:8px 26px;font-family:inherit;font-size:14px;letter-spacing:2px;cursor:pointer}
+  button:hover{background:#00ffcc22;box-shadow:0 0 12px #00ffcc}
+  .keys{color:#8899bb;font-size:12px}
+</style>
+</head>
+<body>
+  <h1>CYBER TIC-TAC-TOE</h1>
+  <div id="hud"><span>你(X) <b id="pw">0</b></span><span>AI(O) <b id="pl">0</b></span><span>平局 <b id="pd">0</b></span></div>
+  <div id="wrap">
+    <canvas id="cv" width="360" height="360"></canvas>
+    <div id="over"><h2 id="ovText">GAME OVER</h2><button onclick="start()">再来一局</button></div>
+  </div>
+  <div class="keys">你先手 X（粉）· AI 后手 O（青）· 点击格子落子</div>
+<script>
+const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+const CELL=cv.width/3;
+let board,pw,pl,pd,over;
+function start(){
+  board=Array(9).fill('');
+  over=false;
+  document.getElementById('over').classList.remove('show');
+  render();
+}
+function render(){
+  ctx.fillStyle='#060913';ctx.fillRect(0,0,cv.width,cv.height);
+  ctx.strokeStyle='#0a1428';ctx.lineWidth=2;
+  for(let i=1;i<3;i++){
+    ctx.beginPath();ctx.moveTo(i*CELL,0);ctx.lineTo(i*CELL,cv.height);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(0,i*CELL);ctx.lineTo(cv.width,i*CELL);ctx.stroke();
+  }
+  for(let i=0;i<9;i++){
+    const r=(i/3)|0,c=i%3;
+    if(!board[i])continue;
+    const col=board[i]==='X'?'#ff2fa0':'#00ffcc';
+    ctx.shadowColor=col;ctx.shadowBlur=14;ctx.strokeStyle=col;
+    ctx.font='bold 64px Courier New';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.strokeText(board[i],c*CELL+CELL/2,r*CELL+CELL/2+4);
+    ctx.shadowBlur=0;
+  }
+}
+function winner(b){
+  const lines=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+  for(const [a,d,g] of lines)
+    if(b[a]&&b[a]===b[d]&&b[d]===b[g])return b[a];
+  return b.every(v=>v)?'D':'';
+}
+function minimax(b,depth,isMax){
+  const w=winner(b);
+  if(w==='O')return 10-depth;
+  if(w==='X')return depth-10;
+  if(w==='D')return 0;
+  let best=isMax?-Infinity:Infinity;
+  for(let i=0;i<9;i++){
+    if(b[i])continue;
+    b[i]=isMax?'O':'X';
+    const s=minimax(b,depth+1,!isMax);
+    b[i]='';
+    if(isMax)best=Math.max(best,s);else best=Math.min(best,s);
+  }
+  return best;
+}
+function aiMove(){
+  let best=-Infinity,pos=-1;
+  for(let i=0;i<9;i++){
+    if(board[i])continue;
+    board[i]='O';
+    const s=minimax(board,0,false);
+    board[i]='';
+    if(s>best){best=s;pos=i;}
+  }
+  return pos;
+}
+function finish(msg){
+  over=true;
+  if(msg==='X'){pw++;document.getElementById('pw').textContent=pw;document.getElementById('ovText').textContent='YOU WIN!';}
+  else if(msg==='O'){pl++;document.getElementById('pl').textContent=pl;document.getElementById('ovText').textContent='AI WINS';}
+  else {pd++;document.getElementById('pd').textContent=pd;document.getElementById('ovText').textContent='DRAW';}
+  document.getElementById('over').classList.add('show');
+}
+cv.addEventListener('click',e=>{
+  if(over)return;
+  const rect=cv.getBoundingClientRect();
+  const x=e.clientX-rect.left,y=e.clientY-rect.top;
+  const c=(x/CELL)|0,r=(y/CELL)|0,i=r*3+c;
+  if(i<0||i>8||board[i])return;
+  board[i]='X';render();
+  const w=winner(board);
+  if(w){finish(w);return;}
+  const p=aiMove();
+  if(p<0)return;
+  board[p]='O';render();
+  const w2=winner(board);
+  if(w2)finish(w2);
+});
+pw=0;pl=0;pd=0;
+start();
+</script>
+</body>
+</html>

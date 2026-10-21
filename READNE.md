@@ -25,6 +25,41 @@ An interactive, ultra-responsive 2D arcade breakout game engine. Custom collisio
 - **Controls**: mouse or `←` / `→` to move the paddle, `Space` to launch the ball.
 - **Features**: angle-dependent paddle deflection, 6-row neon brick grid, 3 lives.
 
+### 🧩 Cyber Tetris (赛博俄罗斯方块) — `cyber-tetris.html`
+
+Classic falling-block stacking with neon tetrominoes, hold-to-speed soft drop, hard drop, next-piece preview, and level-based acceleration.
+
+- **Controls**: `←` / `→` move, `↑` rotate, `↓` soft drop, `Space` hard drop, `P` pause.
+- **Features**: 7 tetromino shapes, line-clear scoring, progressive speed.
+
+### 🔢 Cyber 2048 (赛博数字合并) — `cyber-2048.html`
+
+Slide and merge equal tiles to reach 2048. Neon color scale per tile value, local best score.
+
+- **Controls**: arrow keys or `W A S D` to slide.
+- **Features**: merge mechanics with score, win/lose detection, local high score.
+
+### 🃏 Cyber Memory (赛博记忆翻牌) — `cyber-memory.html`
+
+Flip neon symbol cards and match all 8 pairs in as few steps as possible.
+
+- **Controls**: click cards to flip.
+- **Features**: 4x4 grid, pair counting, step counting.
+
+### ❎ Cyber Tic-Tac-Toe (赛博井字棋) — `cyber-ttt.html`
+
+Tic-tac-toe against an unbeatable minimax AI. Pink X vs cyan O.
+
+- **Controls**: click an empty cell to place your mark.
+- **Features**: perfect-play AI, win/lose/draw scoreboard.
+
+### 🔨 Cyber Whack (赛博打地鼠) — `cyber-whack.html`
+
+Whack neon moles popping out of 9 holes within 30 seconds. Misses cost points.
+
+- **Controls**: click a visible mole to score.
+- **Features**: 30s countdown, miss penalty, fast-paced arcade action.
+
 ---
 
 ## 🎯 Key Highlights
@@ -43,6 +78,11 @@ An interactive, ultra-responsive 2D arcade breakout game engine. Custom collisio
 ├── index.html            # Game lobby / entry page
 ├── cyber-snake.html      # Cyber Snake mini game (self-contained)
 ├── cyber-breakout.html   # Cyber Breakout mini game (self-contained)
+├── cyber-tetris.html     # Cyber Tetris mini game (self-contained)
+├── cyber-2048.html       # Cyber 2048 mini game (self-contained)
+├── cyber-memory.html     # Cyber Memory mini game (self-contained)
+├── cyber-ttt.html        # Cyber Tic-Tac-Toe mini game (self-contained)
+├── cyber-whack.html      # Cyber Whack mini game (self-contained)
 └── README.md             # Project documentation
 ```
 

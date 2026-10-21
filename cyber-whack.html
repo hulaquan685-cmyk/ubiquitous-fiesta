@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cyber Whack · 赛博打地鼠</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#05060f;color:#00ffcc;font-family:'Courier New',monospace;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px}
+  h1{font-size:24px;letter-spacing:4px;text-shadow:0 0 12px #00ffcc}
+  #hud{display:flex;gap:30px;font-size:14px}
+  #hud span{color:#ff2fa0}
+  #wrap{position:relative;border:2px solid #00ffcc;box-shadow:0 0 20px #00ffcc55}
+  canvas{display:block;background:#060913;cursor:crosshair}
+  #over{display:none;position:absolute;inset:0;background:#05060fcc;align-items:center;justify-content:center;flex-direction:column;gap:14px}
+  #over.show{display:flex}
+  #over h2{color:#ff2fa0;font-size:28px;text-shadow:0 0 16px #ff2fa0}
+  #over p{color:#00ffcc;font-size:14px}
+  button{background:transparent;border:1px solid #00ffcc;color:#00ffcc;padding:8px 26px;font-family:inherit;font-size:14px;letter-spacing:2px;cursor:pointer}
+  button:hover{background:#00ffcc22;box-shadow:0 0 12px #00ffcc}
+  .keys{color:#8899bb;font-size:12px}
+</style>
+</head>
+<body>
+  <h1>CYBER WHACK</h1>
+  <div id="hud"><span>得分 <b id="score">0</b></span><span>时间 <b id="time">30</b>s</span></div>
+  <div id="wrap">
+    <canvas id="cv" width="420" height="420"></canvas>
+    <div id="over"><h2>TIME'S UP!</h2><p id="final">得分 0</p><button onclick="start()">再来一局</button></div>
+  </div>
+  <div class="keys">点击冒头的霓虹地鼠 · 30 秒限时 · 点空扣分</div>
+<script>
+const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+const N=3,CELL=cv.width/N;
+let holes,score,timeLeft,timer,spawnTimer,over;
+function start(){
+  holes=Array.from({length:9},()=>({up:false,t:0}));
+  score=0;timeLeft=30;over=false;
+  document.getElementById('score').textContent=0;
+  document.getElementById('time').textContent=30;
+  document.getElementById('over').classList.remove('show');
+  clearInterval(timer);clearInterval(spawnTimer);
+  timer=setInterval(tick,1000);
+  spawnTimer=setInterval(spawn,600);
+  render();
+}
+function tick(){
+  if(over)return;
+  timeLeft--;
+  document.getElementById('time').textContent=timeLeft;
+  if(timeLeft<=0)finish();
+}
+function spawn(){
+  if(over)return;
+  const down=holes.filter(h=>!h.up);
+  if(!down.length)return;
+  const h=down[(Math.random()*down.length)|0];
+  h.up=true;h.t=1200;
+}
+function finish(){
+  over=true;clearInterval(timer);clearInterval(spawnTimer);
+  document.getElementById('final').textContent='得分 '+score;
+  document.getElementById('over').classList.add('show');
+}
+function render(){
+  ctx.fillStyle='#060913';ctx.fillRect(0,0,cv.width,cv.height);
+  for(let i=0;i<9;i++){
+    const r=(i/N)|0,c=i%N,x=c*CELL,y=r*CELL;
+    // hole
+    ctx.fillStyle='#0a1428';
+    ctx.beginPath();ctx.ellipse(x+CELL/2,y+CELL/2+18,CELL*0.36,CELL*0.2,0,0,Math.PI*2);ctx.fill();
+    const h=holes[i];
+    if(h.up){
+      h.t-=50;
+      if(h.t<=0)h.up=false;
+      const col='#ff2fa0';
+      ctx.shadowColor=col;ctx.shadowBlur=14;ctx.fillStyle=col;
+      ctx.beginPath();ctx.arc(x+CELL/2,y+CELL/2,CELL*0.26,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#05060f';
+      ctx.beginPath();ctx.arc(x+CELL/2-CELL*0.08,y+CELL/2-CELL*0.04,CELL*0.05,0,Math.PI*2);ctx.fill();
+      ctx.beginPath();ctx.arc(x+CELL/2+CELL*0.08,y+CELL/2-CELL*0.04,CELL*0.05,0,Math.PI*2);ctx.fill();
+      ctx.shadowBlur=0;
+    }
+  }
+  if(!over)requestAnimationFrame(render);
+}
+cv.addEventListener('click',e=>{
+  if(over)return;
+  const rect=cv.getBoundingClientRect();
+  const x=e.clientX-rect.left,y=e.clientY-rect.top;
+  const r=(y/CELL)|0,c=(x/CELL)|0,i=r*N+c;
+  if(i<0||i>8)return;
+  if(holes[i].up){
+    holes[i].up=false;
+    score++;document.getElementById('score').textContent=score;
+  }else{
+    score=Math.max(0,score-1);document.getElementById('score').textContent=score;
+  }
+});
+start();
+</script>
+</body>
+</html>

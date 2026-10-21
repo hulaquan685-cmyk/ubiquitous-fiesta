@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cyber Memory · 赛博记忆翻牌</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#05060f;color:#00ffcc;font-family:'Courier New',monospace;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px}
+  h1{font-size:24px;letter-spacing:4px;text-shadow:0 0 12px #00ffcc}
+  #hud{display:flex;gap:30px;font-size:14px}
+  #hud span{color:#ff2fa0}
+  #wrap{position:relative;border:2px solid #00ffcc;box-shadow:0 0 20px #00ffcc55}
+  canvas{display:block;background:#060913;cursor:pointer}
+  #over{display:none;position:absolute;inset:0;background:#05060fcc;align-items:center;justify-content:center;flex-direction:column;gap:14px}
+  #over.show{display:flex}
+  #over h2{color:#ff2fa0;font-size:28px;text-shadow:0 0 16px #ff2fa0}
+  button{background:transparent;border:1px solid #00ffcc;color:#00ffcc;padding:8px 26px;font-family:inherit;font-size:14px;letter-spacing:2px;cursor:pointer}
+  button:hover{background:#00ffcc22;box-shadow:0 0 12px #00ffcc}
+  .keys{color:#8899bb;font-size:12px}
+</style>
+</head>
+<body>
+  <h1>CYBER MEMORY</h1>
+  <div id="hud"><span>配对 <b id="pairs">0</b>/8</span><span>步数 <b id="steps">0</b></span></div>
+  <div id="wrap">
+    <canvas id="cv" width="400" height="400"></canvas>
+    <div id="over"><h2>ALL MATCHED!</h2><button onclick="start()">再来一局</button></div>
+  </div>
+  <div class="keys">点击翻牌 · 找出全部 8 对霓虹符号</div>
+<script>
+const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+const N=4,CELL=cv.width/N;
+const SYMS=['#','%','&','@','$','+','*','?'];
+const COLORS=['#ff2fa0','#ff7a2f','#ffe32f','#00ffcc','#2fd6ff','#7a5aff','#ff5ac8','#00cc88'];
+let cards,flipped,pairs,steps,lockClick;
+function start(){
+  const arr=[];
+  for(let i=0;i<8;i++){arr.push(i);arr.push(i);}
+  for(let i=arr.length-1;i>0;i--){const j=(Math.random()*(i+1))|0;[arr[i],arr[j]]=[arr[j],arr[i]];}
+  cards=arr.map(v=>({v,face:false,matched:false}));
+  flipped=[];pairs=0;steps=0;lockClick=false;
+  document.getElementById('pairs').textContent='0/8';
+  document.getElementById('steps').textContent=0;
+  document.getElementById('over').classList.remove('show');
+  render();
+}
+function render(){
+  ctx.fillStyle='#060913';ctx.fillRect(0,0,cv.width,cv.height);
+  ctx.strokeStyle='#0a1428';
+  for(let i=0;i<16;i++){
+    const r=(i/N)|0,c=i%N;
+    ctx.strokeRect(c*CELL,r*CELL,CELL,CELL);
+    const card=cards[i];
+    if(card.face||card.matched){
+      const col=COLORS[card.v];
+      ctx.shadowColor=col;ctx.shadowBlur=12;
+      ctx.strokeStyle=col;ctx.strokeRect(c*CELL+6,r*CELL+6,CELL-12,CELL-12);
+      ctx.fillStyle=col;ctx.font='bold 44px Courier New';
+      ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText(SYMS[card.v],c*CELL+CELL/2,r*CELL+CELL/2+2);
+      ctx.shadowBlur=0;
+    }
+  }
+}
+cv.addEventListener('click',e=>{
+  if(lockClick)return;
+  const rect=cv.getBoundingClientRect();
+  const x=e.clientX-rect.left,y=e.clientY-rect.top;
+  const r=(y/CELL)|0,c=(x/CELL)|0,i=r*N+c;
+  if(i<0||i>15)return;
+  const card=cards[i];
+  if(card.face||card.matched)return;
+  card.face=true;flipped.push(i);
+  steps++;document.getElementById('steps').textContent=steps;
+  render();
+  if(flipped.length===2){
+    lockClick=true;
+    const [a,b]=flipped;
+    setTimeout(()=>{
+      if(cards[a].v===cards[b].v){
+        cards[a].matched=cards[b].matched=true;
+        pairs++;document.getElementById('pairs').textContent=pairs+'/8';
+        if(pairs===8)document.getElementById('over').classList.add('show');
+      }else{
+        cards[a].face=cards[b].face=false;
+      }
+      flipped=[];lockClick=false;render();
+    },500);
+  }
+});
+start();
+</script>
+</body>
+</html>

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cyber 2048 · 赛博数字合并</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#05060f;color:#00ffcc;font-family:'Courier New',monospace;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px}
+  h1{font-size:24px;letter-spacing:4px;text-shadow:0 0 12px #00ffcc}
+  #hud{display:flex;gap:30px;font-size:14px}
+  #hud span{color:#ff2fa0}
+  #wrap{position:relative;border:2px solid #00ffcc;box-shadow:0 0 20px #00ffcc55}
+  canvas{display:block;background:#060913}
+  #over{display:none;position:absolute;inset:0;background:#05060fcc;align-items:center;justify-content:center;flex-direction:column;gap:14px}
+  #over.show{display:flex}
+  #over h2{color:#ff2fa0;font-size:28px;text-shadow:0 0 16px #ff2fa0}
+  button{background:transparent;border:1px solid #00ffcc;color:#00ffcc;padding:8px 26px;font-family:inherit;font-size:14px;letter-spacing:2px;cursor:pointer}
+  button:hover{background:#00ffcc22;box-shadow:0 0 12px #00ffcc}
+  .keys{color:#8899bb;font-size:12px}
+</style>
+</head>
+<body>
+  <h1>CYBER 2048</h1>
+  <div id="hud"><span>得分 <b id="score">0</b></span><span>最高 <b id="best">0</b></span></div>
+  <div id="wrap">
+    <canvas id="cv" width="400" height="400"></canvas>
+    <div id="over"><h2 id="ovText">GAME OVER</h2><button onclick="start()">再来一局</button></div>
+  </div>
+  <div class="keys">方向键 / WASD 滑动合并 · 相同数字相加翻倍</div>
+<script>
+const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+const N=4,SIZE=cv.width,CELL=SIZE/N;
+const COLORS={2:'#0e2a3a',4:'#123c4a',8:'#164d5e',16:'#1b5f74',32:'#22728c',64:'#2a87a6',128:'#ff2fa0',256:'#ff5ac8',512:'#ff7ae0',1024:'#ffa3ee',2048:'#ffffff'};
+let grid,score,best=+localStorage.getItem('g2048')||0,over,won;
+document.getElementById('best').textContent=best;
+function start(){
+  grid=Array.from({length:N},()=>Array(N).fill(0));
+  score=0;over=false;won=false;
+  document.getElementById('score').textContent=0;
+  document.getElementById('over').classList.remove('show');
+  addTile();addTile();render();
+}
+function addTile(){
+  const empty=[];
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++)if(!grid[r][c])empty.push([r,c]);
+  if(!empty.length)return;
+  const [r,c]=empty[(Math.random()*empty.length)|0];
+  grid[r][c]=Math.random()<0.9?2:4;
+}
+function render(){
+  ctx.fillStyle='#060913';ctx.fillRect(0,0,SIZE,SIZE);
+  ctx.strokeStyle='#0a1428';
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++){
+    ctx.strokeRect(c*CELL,r*CELL,CELL,CELL);
+    const v=grid[r][c];
+    if(!v)continue;
+    const col=COLORS[v]||'#ffd700';
+    ctx.shadowColor=col;ctx.shadowBlur=10;ctx.fillStyle=col;
+    ctx.fillRect(c*CELL+6,r*CELL+6,CELL-12,CELL-12);ctx.shadowBlur=0;
+    ctx.fillStyle='#05060f';ctx.font='bold '+(v>=128?18:26)+'px Courier New';
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(v,c*CELL+CELL/2,r*CELL+CELL/2+2);
+  }
+}
+function merge(line){
+  const vals=line.filter(v=>v);
+  const out=[];let gain=0;
+  for(let i=0;i<vals.length;i++){
+    if(i+1<vals.length&&vals[i]===vals[i+1]){out.push(vals[i]*2);gain+=vals[i]*2;i++;}
+    else out.push(vals[i]);
+  }
+  while(out.length<N)out.push(0);
+  const moved=!line.every((v,i)=>v===out[i])||gain>0;
+  return {line:out,gain,moved};
+}
+function move(dir){
+  let moved=false;
+  for(let i=0;i<N;i++){
+    const line=[];
+    for(let j=0;j<N;j++){
+      let r,c;
+      if(dir===0){r=i;c=j;}
+      else if(dir===1){r=i;c=N-1-j;}
+      else if(dir===2){r=j;c=i;}
+      else {r=N-1-j;c=i;}
+      line.push(grid[r][c]);
+    }
+    const res=merge(line);
+    if(res.moved)moved=true;
+    score+=res.gain;
+    for(let j=0;j<N;j++){
+      let r,c;
+      if(dir===0){r=i;c=j;}
+      else if(dir===1){r=i;c=N-1-j;}
+      else if(dir===2){r=j;c=i;}
+      else {r=N-1-j;c=i;}
+      grid[r][c]=res.line[j];
+    }
+  }
+  document.getElementById('score').textContent=score;
+  if(score>best){best=score;localStorage.setItem('g2048',best);document.getElementById('best').textContent=best;}
+  if(moved){addTile();render();checkEnd();}
+}
+function checkEnd(){
+  if(grid.some(r=>r.includes(2048))&&!won){
+    won=true;document.getElementById('ovText').textContent='YOU WIN!';
+    document.getElementById('over').classList.add('show');return;
+  }
+  if(grid.some(r=>r.some(v=>!v)))return;
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++){
+    if(c+1<N&&grid[r][c]===grid[r][c+1])return;
+    if(r+1<N&&grid[r][c]===grid[r+1][c])return;
+  }
+  over=true;document.getElementById('ovText').textContent='GAME OVER';
+  document.getElementById('over').classList.add('show');
+}
+document.addEventListener('keydown',e=>{
+  const k=e.key.toLowerCase();
+  if(over)return;
+  if(k==='arrowleft'||k==='a')move(0);
+  else if(k==='arrowright'||k==='d')move(1);
+  else if(k==='arrowup'||k==='w')move(2);
+  else if(k==='arrowdown'||k==='s')move(3);
+});
+start();
+</script>
+</body>
+</html>

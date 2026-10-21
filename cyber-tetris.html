@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cyber Tetris · 赛博俄罗斯方块</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#05060f;color:#00ffcc;font-family:'Courier New',monospace;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px}
+  h1{font-size:24px;letter-spacing:4px;text-shadow:0 0 12px #00ffcc}
+  #wrap{display:flex;gap:16px;align-items:flex-start}
+  #board{position:relative;border:2px solid #00ffcc;box-shadow:0 0 20px #00ffcc55}
+  canvas#main{display:block;background:#060913}
+  #side{display:flex;flex-direction:column;gap:12px;width:110px}
+  .panel{border:1px solid #00ffcc44;padding:8px;font-size:12px;text-align:center}
+  .panel b{display:block;font-size:16px;color:#ff2fa0;margin-top:4px}
+  canvas#next{display:block;background:#060913;width:90px;height:90px;margin:0 auto}
+  #over{display:none;position:absolute;inset:0;background:#05060fcc;align-items:center;justify-content:center;flex-direction:column;gap:14px}
+  #over.show{display:flex}
+  #over h2{color:#ff2fa0;font-size:26px;text-shadow:0 0 16px #ff2fa0}
+  button{background:transparent;border:1px solid #00ffcc;color:#00ffcc;padding:8px 26px;font-family:inherit;font-size:14px;letter-spacing:2px;cursor:pointer}
+  button:hover{background:#00ffcc22;box-shadow:0 0 12px #00ffcc}
+  .keys{color:#8899bb;font-size:12px;text-align:center}
+</style>
+</head>
+<body>
+  <h1>CYBER TETRIS</h1>
+  <div id="wrap">
+    <div id="board">
+      <canvas id="main" width="240" height="480"></canvas>
+      <div id="over"><h2>GAME OVER</h2><button onclick="start()">再来一局</button></div>
+    </div>
+    <div id="side">
+      <div class="panel">得分<b id="score">0</b></div>
+      <div class="panel">消行<b id="lines">0</b></div>
+      <div class="panel">等级<b id="level">1</b></div>
+      <div class="panel">下一个<canvas id="next" width="90" height="90"></canvas></div>
+    </div>
+  </div>
+  <div class="keys">← → 移动 · ↑ 旋转 · ↓ 加速 · 空格 硬降 · P 暂停</div>
+<script>
+const CW=10,CH=20;
+const cv=document.getElementById('main'),ctx=cv.getContext('2d');
+const ncv=document.getElementById('next'),nctx=ncv.getContext('2d');
+const S=cv.width/CW;
+const PIECES=[
+ {m:[[1,1,1,1]],c:'#00ffcc'},
+ {m:[[1,1],[1,1]],c:'#ffe32f'},
+ {m:[[0,1,0],[1,1,1]],c:'#ff2fa0'},
+ {m:[[0,1,1],[1,1,0]],c:'#ff7a2f'},
+ {m:[[1,1,0],[0,1,1]],c:'#2fd6ff'},
+ {m:[[1,0,0],[1,1,1]],c:'#7a5aff'},
+ {m:[[0,0,1],[1,1,1]],c:'#00cc88'}
+];
+let grid,cur,nextPiece,score,lines,level,timer,paused,over;
+function start(){
+  grid=Array.from({length:CH},()=>Array(CW).fill(0));
+  score=0;lines=0;level=1;paused=false;over=false;
+  document.getElementById('score').textContent=0;
+  document.getElementById('lines').textContent=0;
+  document.getElementById('level').textContent=1;
+  document.getElementById('over').classList.remove('show');
+  nextPiece=randPiece();
+  spawn();
+  draw();
+  clearInterval(timer);timer=setInterval(step,speed());
+}
+function randPiece(){const p=PIECES[(Math.random()*PIECES.length)|0];return {m:p.m.map(r=>r.slice()),c:p.c};}
+function spawn(){
+  cur=nextPiece;nextPiece=randPiece();
+  cur.x=(CW-cur.m[0].length)>>1;cur.y=0;
+  drawNext();
+  if(hit(cur.x,cur.y,cur.m)){over=true;clearInterval(timer);document.getElementById('over').classList.add('show');}
+}
+function speed(){return Math.max(90,500-(level-1)*45);}
+function hit(x,y,m){
+  for(let r=0;r<m.length;r++)for(let c=0;c<m[r].length;c++){
+    if(!m[r][c])continue;
+    const nx=x+c,ny=y+r;
+    if(nx<0||nx>=CW||ny>=CH)return true;
+    if(ny>=0&&grid[ny][nx])return true;
+  }
+  return false;
+}
+function rot(m){
+  const h=m.length,w=m[0].length;
+  const out=Array.from({length:w},()=>Array(h).fill(0));
+  for(let r=0;r<h;r++)for(let c=0;c<w;c++)out[c][h-1-r]=m[r][c];
+  return out;
+}
+function lock(){
+  for(let r=0;r<cur.m.length;r++)for(let c=0;c<cur.m[r].length;c++){
+    if(!cur.m[r][c])continue;
+    const y=cur.y+r,x=cur.x+c;
+    if(y>=0)grid[y][x]=cur.c;
+  }
+  clearRows();spawn();draw();
+}
+function clearRows(){
+  let cleared=0;
+  for(let y=CH-1;y>=0;y--){
+    if(grid[y].every(v=>v)){
+      grid.splice(y,1);grid.unshift(Array(CW).fill(0));y++;cleared++;
+    }
+  }
+  if(cleared){
+    lines+=cleared;score+=cleared*100*level;level=1+((lines/10)|0);
+    document.getElementById('score').textContent=score;
+    document.getElementById('lines').textContent=lines;
+    document.getElementById('level').textContent=level;
+    clearInterval(timer);timer=setInterval(step,speed());
+  }
+}
+function step(){
+  if(paused||over)return;
+  if(!hit(cur.x,cur.y+1,cur.m))cur.y++;
+  else lock();
+  draw();
+}
+function draw(){
+  ctx.fillStyle='#060913';ctx.fillRect(0,0,cv.width,cv.height);
+  ctx.strokeStyle='#0a1428';ctx.lineWidth=1;
+  for(let i=1;i<CW;i++){ctx.beginPath();ctx.moveTo(i*S,0);ctx.lineTo(i*S,cv.height);ctx.stroke();}
+  for(let i=1;i<CH;i++){ctx.beginPath();ctx.moveTo(0,i*S);ctx.lineTo(cv.width,i*S);ctx.stroke();}
+  for(let y=0;y<CH;y++)for(let x=0;x<CW;x++)if(grid[y][x])cell(x,y,grid[y][x]);
+  for(let r=0;r<cur.m.length;r++)for(let c=0;c<cur.m[r].length;c++)
+    if(cur.m[r][c])cell(cur.x+c,cur.y+r,cur.c);
+}
+function cell(x,y,color){
+  ctx.shadowColor=color;ctx.shadowBlur=8;ctx.fillStyle=color;
+  ctx.fillRect(x*S+2,y*S+2,S-4,S-4);ctx.shadowBlur=0;
+}
+function drawNext(){
+  nctx.fillStyle='#060913';nctx.fillRect(0,0,ncv.width,ncv.height);
+  const m=nextPiece.m,w=m[0].length,h=m.length,cs=ncv.width/4;
+  const ox=((4-w)/2)*cs,oy=((4-h)/2)*cs;
+  nctx.shadowColor=nextPiece.c;nctx.shadowBlur=6;nctx.fillStyle=nextPiece.c;
+  for(let r=0;r<h;r++)for(let c=0;c<w;c++)if(m[r][c])nctx.fillRect(ox+c*cs+2,oy+r*cs+2,cs-4,cs-4);
+  nctx.shadowBlur=0;
+}
+document.addEventListener('keydown',e=>{
+  const k=e.key.toLowerCase();
+  if(over)return;
+  if(k==='p'){e.preventDefault();paused=!paused;return;}
+  if(paused)return;
+  if(k==='arrowleft'){if(!hit(cur.x-1,cur.y,cur.m))cur.x--;}
+  else if(k==='arrowright'){if(!hit(cur.x+1,cur.y,cur.m))cur.x++;}
+  else if(k==='arrowup'){const m=rot(cur.m);if(!hit(cur.x,cur.y,m))cur.m=m;}
+  else if(k==='arrowdown'){if(!hit(cur.x,cur.y+1,cur.m)){cur.y++;score+=1;document.getElementById('score').textContent=score;}}
+  else if(k===' '){e.preventDefault();while(!hit(cur.x,cur.y+1,cur.m)){cur.y++;score+=2;}lock();return;}
+  draw();
+});
+start();
+</script>
+</body>
+</html>
